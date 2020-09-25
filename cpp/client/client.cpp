@@ -22,6 +22,7 @@
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TTransportUtils.h>
+#include <thrift/protocol/TCompactProtocol.h>
 
 #include "../gen-cpp/Calculator.h"
 
@@ -33,48 +34,117 @@ using namespace apache::thrift::transport;
 using namespace tutorial;
 using namespace shared;
 
+// int main() {
+//   std::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
+//   // std::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+//   // std::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+//   std::shared_ptr<TTransport> transport(new TFramedTransport(socket));
+//   std::shared_ptr<TProtocol> protocol(new TCompactProtocol(transport));
+//   CalculatorClient client(protocol);
+
+//   try {
+//     transport->open();
+
+//     client.ping();
+//     cout << "ping()" << endl;
+
+//     cout << "1 + 1 = " << client.add(1, 1) << endl;
+
+//     Work work;
+//     work.op = Operation::DIVIDE;
+//     work.num1 = 1;
+//     work.num2 = 0;
+
+//     try {
+//       client.calculate(1, work);
+//       cout << "Whoa? We can divide by zero!" << endl;
+//     } catch (InvalidOperation& io) {
+//       cout << "InvalidOperation: " << io.why << endl;
+//       // or using generated operator<<: cout << io << endl;
+//       // or by using std::exception native method what(): cout << io.what() << endl;
+//     }
+
+//     work.op = Operation::SUBTRACT;
+//     work.num1 = 15;
+//     work.num2 = 10;
+//     int32_t diff = client.calculate(1, work);
+//     cout << "15 - 10 = " << diff << endl;
+
+//     // Note that C++ uses return by reference for complex types to avoid
+//     // costly copy construction
+//     SharedStruct ss;
+//     client.getStruct(ss, 1);
+//     cout << "Received log: " << ss << endl;
+
+//     exit(0);
+
+//     //transport->close();
+//   } catch (TException& tx) {
+//     cout << "ERROR: " << tx.what() << endl;
+//   }
+// }
+
+
 int main() {
-  std::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
-  std::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-  std::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-  CalculatorClient client(protocol);
+  std::vector<std::shared_ptr<TTransport>>t0;
+  std::vector<std::shared_ptr<TTransport>> t1;
+  std::vector<std::shared_ptr<TProtocol>> t2;
+  std::vector<std::shared_ptr<CalculatorClient>> t3;
 
-  try {
-    transport->open();
+  for (int i=0; i<10; ++i) {
+    std::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
+    // std::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+    // std::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    std::shared_ptr<TTransport> transport(new TFramedTransport(socket));
+    std::shared_ptr<TProtocol> protocol(new TCompactProtocol(transport));
+    std::shared_ptr<CalculatorClient> client(new CalculatorClient(protocol));
 
-    client.ping();
-    cout << "ping()" << endl;
-
-    cout << "1 + 1 = " << client.add(1, 1) << endl;
-
-    Work work;
-    work.op = Operation::DIVIDE;
-    work.num1 = 1;
-    work.num2 = 0;
+    t0.push_back(socket);
+    t1.push_back(transport);
+    t2.push_back(protocol);
+    t3.push_back(client);
+     
 
     try {
-      client.calculate(1, work);
-      cout << "Whoa? We can divide by zero!" << endl;
-    } catch (InvalidOperation& io) {
-      cout << "InvalidOperation: " << io.why << endl;
-      // or using generated operator<<: cout << io << endl;
-      // or by using std::exception native method what(): cout << io.what() << endl;
+      transport->open();
+
+      client->ping();
+      cout << "ping()" << endl;
+
+      cout << "1 + 1 = " << client->add(1, 1) << endl;
+
+      Work work;
+      work.op = Operation::DIVIDE;
+      work.num1 = 1;
+      work.num2 = 0;
+
+      try {
+        client->calculate(1, work);
+        cout << "Whoa? We can divide by zero!" << endl;
+      } catch (InvalidOperation& io) {
+        cout << "InvalidOperation: " << io.why << endl;
+        // or using generated operator<<: cout << io << endl;
+        // or by using std::exception native method what(): cout << io.what() << endl;
+      }
+
+      work.op = Operation::SUBTRACT;
+      work.num1 = 15;
+      work.num2 = 10;
+      int32_t diff = client->calculate(1, work);
+      cout << "15 - 10 = " << diff << endl;
+
+      // Note that C++ uses return by reference for complex types to avoid
+      // costly copy construction
+      SharedStruct ss;
+      client->getStruct(ss, 1);
+      cout << "Received log: " << ss << endl;
+
+      //transport->close();
+    } catch (TException& tx) {
+      cout << "ERROR: " << tx.what() << endl;
     }
-
-    work.op = Operation::SUBTRACT;
-    work.num1 = 15;
-    work.num2 = 10;
-    int32_t diff = client.calculate(1, work);
-    cout << "15 - 10 = " << diff << endl;
-
-    // Note that C++ uses return by reference for complex types to avoid
-    // costly copy construction
-    SharedStruct ss;
-    client.getStruct(ss, 1);
-    cout << "Received log: " << ss << endl;
-
-    transport->close();
-  } catch (TException& tx) {
-    cout << "ERROR: " << tx.what() << endl;
   }
+
+  exit(0);
+  
 }
